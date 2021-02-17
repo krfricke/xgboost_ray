@@ -90,12 +90,15 @@ class TestColocation(unittest.TestCase):
                     ray_params=RayParams(max_actor_restarts=1, num_actors=6))
 
     def test_no_tune_spread(self):
+        from ray import logger
         """Tests whether workers are spread when not using Tune."""
         with self.ray_start_cluster() as cluster:
             cluster.add_node(num_cpus=2)
             cluster.add_node(num_cpus=2)
             cluster.wait_for_nodes()
             ray.init(address=cluster.address)
+
+            logger.info(f"Spread resources: {ray.cluster_resources()}")
 
             ray_params = RayParams(
                 max_actor_restarts=1, num_actors=2, cpus_per_actor=2)

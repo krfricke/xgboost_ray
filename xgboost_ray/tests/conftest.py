@@ -51,7 +51,9 @@ def _ray_start_cluster(**kwargs):
         # so ray init will be invoked if do_init is true
         if len(remote_nodes) == 1 and do_init:
             ray.init(address=cluster.address)
+    print("Starting cluster")
     yield cluster
+    print("Stopping cluster")
     # The code after the yield will run as teardown code.
     ray.shutdown()
     cluster.shutdown()
