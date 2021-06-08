@@ -11,7 +11,7 @@ import logging
 
 from xgboost_ray.compat import TrainingCallback
 from xgboost_ray.session import put_queue, get_rabit_rank
-from xgboost_ray.util import Unavailable
+from xgboost_ray.util import Unavailable, export_remote_actors
 
 try:
     from ray import tune
@@ -192,11 +192,18 @@ def _try_add_tune_callback(kwargs: Dict):
         return False
 
 
-def _get_tune_resources(num_actors: int, cpus_per_actor: int,
+def _get_tune_resources(num_actors: int,
+                        cpus_per_actor: int,
                         gpus_per_actor: int,
-                        resources_per_actor: Optional[Dict]):
+                        resources_per_actor: Optional[Dict],
+                        export_actor_classes: bool = True):
     """Returns object to use for ``resources_per_trial`` with Ray Tune."""
     if TUNE_INSTALLED:
+        if export_actor_classes:
+            # If this is set, instantiate dummy communication process actors
+            # to export them to Ray GCS
+            export_remote_actors()
+
         if not TUNE_USING_PG:
             resources_per_actor = {} if not resources_per_actor \
                 else resources_per_actor

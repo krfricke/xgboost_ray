@@ -8,9 +8,10 @@ import pytest
 import numpy as np
 
 import ray
+from ray.util.queue import _QueueActor
 from xgboost_ray import train, RayDMatrix, RayParams
 from xgboost_ray.main import _train
-from xgboost_ray.util import _EventActor, _QueueActor
+from xgboost_ray.util import _EventActor
 
 
 class _MockQueueActor(_QueueActor):

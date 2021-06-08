@@ -27,7 +27,7 @@ try:
     from ray.util.placement_group import PlacementGroup, \
         remove_placement_group, get_current_placement_group
 
-    from xgboost_ray.util import Event, Queue, MultiActorTask
+    from xgboost_ray.util import Event, MultiActorTask, Queue
 
     RAY_INSTALLED = True
 except ImportError:
@@ -36,6 +36,7 @@ except ImportError:
 
 from xgboost_ray.tune import _try_add_tune_callback, _get_tune_resources, \
     TUNE_USING_PG, is_session_enabled
+from xgboost_ray.util import _RemoteEventActor, _RemoteQueueActor
 
 from xgboost_ray.matrix import RayDMatrix, combine_data, \
     RayDeviceQuantileDMatrix, RayDataIter, concat_dataframes, \
@@ -310,6 +311,7 @@ class RayParams:
         if self.cpus_per_actor <= 0 or self.num_actors <= 0:
             raise ValueError("num_actors and cpus_per_actor both must be "
                              "greater than 0.")
+
         return _get_tune_resources(
             num_actors=self.num_actors,
             cpus_per_actor=self.cpus_per_actor,
@@ -752,8 +754,19 @@ def _create_communication_processes(added_tune_callback: bool = False):
             })
     else:
         placement_option.update({"resources": {f"node:{node_ip}": 0.01}})
-    queue = Queue(actor_options=placement_option)  # Queue actor
-    stop_event = Event(actor_options=placement_option)  # Stop event actor
+
+    if added_tune_callback:
+        queue_actor_cls = _RemoteQueueActor
+        event_actor_cls = _RemoteEventActor
+    else:
+        queue_actor_cls = event_actor_cls = None
+
+    queue = Queue(
+        actor_options=placement_option,
+        actor_cls=queue_actor_cls)  # Queue actor
+    stop_event = Event(
+        actor_options=placement_option,
+        actor_cls=event_actor_cls)  # Stop event actor
     return queue, stop_event
 
 
